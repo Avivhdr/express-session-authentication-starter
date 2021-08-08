@@ -4,7 +4,7 @@ const fs = require('fs');
 const encrypt = require('./encrypt');
 const decrypt = require('./decrypt');
 
-const myData = {
+const originalData = {
   firstName: 'Zach',
   lastName: 'Gollwitzer',
   socialSecurityNumber: 'NO NO NO.  Never put personal info in a digitally \
@@ -12,12 +12,12 @@ const myData = {
 };
 
 // String version of our data that can be hashed
-const myDataString = JSON.stringify(myData);
+const originalDataString = JSON.stringify(originalData);
 
 // Sets the value on the hash object: requires string format, so we must convert our object
-hash.update(myDataString);
+hash.update(originalDataString);
 
-// Hashed data in Hexidecimal format
+// Hashed data in Hexadecimal format
 const hashedData = hash.digest('hex');
 
 const senderPrivateKey = fs.readFileSync(__dirname + '/id_rsa_priv.pem', 'utf8');
@@ -26,8 +26,9 @@ const signedMessage = encrypt.encryptWithPrivateKey(senderPrivateKey, hashedData
 
 const packageOfDataToSend = {
     algorithm: 'sha256',
-    originalData: myData,
+    originalData,
     signedAndEncryptedData: signedMessage
 };
 
 module.exports.packageOfDataToSend = packageOfDataToSend;
+// module.exports.originalData = originalData;

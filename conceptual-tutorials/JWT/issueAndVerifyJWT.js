@@ -9,15 +9,15 @@ const fs = require('fs');
  */
 
 const headerObj = {
-    alg: 'RS256',
-    typ: 'JWT'
+  alg: 'RS256',
+  typ: 'JWT'
 };
 
 const payloadObj = {
-    sub: '1234567890',
-    name: 'John Doe',
-    admin: true,
-    iat: 1516239022
+  sub: '1234567890',
+  name: 'John Doe',
+  admin: true,
+  iat: 1516239022
 };
 
 const headerObjString = JSON.stringify(headerObj);
@@ -53,10 +53,10 @@ const signatureInBase64UrlFormat = jwtParts[2];
 verifyFunction.write(headerInBase64UrlFormat + '.' + payloadInBase64UrlFormat);
 verifyFunction.end();
 
-const jwtSignatureBase64 = base64url.toBase64(signatureInBase64UrlFormat);
+const signatureInBase64Format = base64url.toBase64(signatureInBase64UrlFormat); // 'crypto' accepts only base64encoding
 
 const PUB_KEY = fs.readFileSync(__dirname + '/pub_key.pem', 'utf8');
 
-const signatureIsValid = verifyFunction.verify(PUB_KEY, jwtSignatureBase64, 'base64');
+const isSignatureValid = verifyFunction.verify(PUB_KEY, signatureInBase64Format, 'base64');
 
-console.log(signatureIsValid);
+console.log(isSignatureValid);

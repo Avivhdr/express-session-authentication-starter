@@ -1,69 +1,75 @@
 const router = require('express').Router();
 const passport = require('passport');
-const genPassword = require('../lib/passwordUtils').genPassword;
+const genSaltAndHash = require('../lib/passwordUtils').genSaltAndHash;
 const connection = require('../config/database');
 const User = connection.models.User;
 const isAuth = require('./authMiddleware').isAuth;
 const isAdmin = require('./authMiddleware').isAdmin;
 
 /**
- * -------------- POST ROUTES ----------------
- */
+* -------------- POST ROUTES ----------------
+*/
 
- router.post('/login', passport.authenticate('local', { failureRedirect: '/login-failure', successRedirect: 'login-success' }));
+router.post('/login', passport.authenticate('local', {
+  failureRedirect: '/login-failure',
+  successRedirect: '/login-success',
+  // failureFlash: true // TODO-1: Test
+}));
 
- router.post('/register', (req, res, next) => {
-    const saltHash = genPassword(req.body.pw);
-    
-    const salt = saltHash.salt;
-    const hash = saltHash.hash;
+router.post('/register', (req, res, next) => {
+  const { pw, uname } = req.body;
+  const { salt, hash } = genSaltAndHash(pw);
 
-    const newUser = new User({
-        username: req.body.uname,
-        hash: hash,
-        salt: salt,
-        admin: true
+  const newUser = new User({
+    username: uname,
+    hash,
+    salt,
+    admin: true
+  });
+
+  newUser.save()
+    .then((user) => {
+      console.log(user);
     });
 
-    newUser.save()
-        .then((user) => {
-            console.log(user);
-        });
-
-    res.redirect('/login');
- });
+  res.redirect('/login');
+});
 
 
- /**
- * -------------- GET ROUTES ----------------
- */
+/**
+* -------------- GET ROUTES ----------------
+*/
 
 router.get('/', (req, res, next) => {
-    res.send('<h1>Home</h1><p>Please <a href="/register">register</a></p>');
+  res.send(
+            '<h1>Home</h1>\
+            <p>Please <a href="/register">register</a></p>\
+            <p>or <a href="/login">login</a></p>'
+  );
 });
 
 // When you visit http://localhost:3000/login, you will see "Login Page"
 router.get('/login', (req, res, next) => {
-   
-    const form = '<h1>Login Page</h1><form method="POST" action="/login">\
+
+  const form = '<h1>Login Page</h1><form method="POST" action="/login">\
     Enter Username:<br><input type="text" name="uname">\
     <br>Enter Password:<br><input type="password" name="pw">\
     <br><br><input type="submit" value="Submit"></form>';
 
-    res.send(form);
+  res.send(form);
 
 });
 
 // When you visit http://localhost:3000/register, you will see "Register Page"
 router.get('/register', (req, res, next) => {
 
-    const form = '<h1>Register Page</h1><form method="post" action="register">\
+  const form = '<h1>Register Page</h1><form method="post" action="register">\
                     Enter Username:<br><input type="text" name="uname">\
                     <br>Enter Password:<br><input type="password" name="pw">\
                     <br><br><input type="submit" value="Submit"></form>';
 
-    res.send(form);
-    
+  res.send(form);
+
 });
 
 /**
@@ -73,25 +79,25 @@ router.get('/register', (req, res, next) => {
  * Also, look up what behaviour express session has without a maxage set
  */
 router.get('/protected-route', isAuth, (req, res, next) => {
-    res.send('You made it to the route.');
+  res.send('You made it to the route.');
 });
 
 router.get('/admin-route', isAdmin, (req, res, next) => {
-    res.send('You made it to the admin route.');
+  res.send('You made it to the admin route.');
 });
 
 // Visiting this route logs the user out
 router.get('/logout', (req, res, next) => {
-    req.logout();
-    res.redirect('/protected-route');
+  req.logout(); // this function deletes the passport object from the req.session.passport.user 
+  res.redirect('/protected-route');
 });
 
 router.get('/login-success', (req, res, next) => {
-    res.send('<p>You successfully logged in. --> <a href="/protected-route">Go to protected route</a></p>');
+  res.send('<p>You successfully logged in. --> <a href="/protected-route">Go to protected route</a></p>');
 });
 
 router.get('/login-failure', (req, res, next) => {
-    res.send('You entered the wrong password.');
+  res.send('no user/password');
 });
 
 module.exports = router;
